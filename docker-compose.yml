@@ -13,20 +13,35 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+      TZ: "Asia/Tokyo"
+    tty: true
+    stdin_open: true
     env_file: .env
-    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
     volumes:
-      - ./db-data:/var/lib/mysql
+      - ./docker/mysql/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+      - ./docker/mysql/mysql_data:/var/lib/mysql
       - ./sql/test_data_mysql.sql:/docker-entrypoint-initdb.d/test_data_mysql.sql
-  web:
-    container_name: ${CONTAINER_BASE_NAME}-apache
-    build: ./docker
+  app:
+    container_name: ${CONTAINER_BASE_NAME}-app
+    build:
+      context: ./docker
+      dockerfile: app.Dockerfile
     ports:
       - "${PORT}"
     volumes:
-      - ./www/html:/var/www/local/html
-      - ./www/logs:/var/www/local/logs
-      - ./mt-settings/mt-config.cgi:/var/www/local/cgi-bin/mt/mt-config.cgi
-      - ./docker/httpd/virtualhost.conf:/etc/httpd/conf.d/virtualhost.conf
+      - ./docker/apache/htdocs/:/usr/local/apache2/htdocs/
+      - ./docker/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./mt-settings/:/usr/local/apache2/cgi-bin/mt/
+      - ./mt-settings/mt-static/:/usr/local/apache2/htdocs/mt-static/
     depends_on:
       - mysql
+  mailhog:
+    container_name: ${CONTAINER_BASE_NAME}-mail
+    image: mailhog/mailhog
+    ports:
+      - 8025:8025
+  memcached:
+    container_name: ${CONTAINER_BASE_NAME}-cache
+    image: memcached:1.5.19-alpine
+    ports:
+      - 11211:11211

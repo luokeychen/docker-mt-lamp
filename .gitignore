@@ -3,7 +3,8 @@
 /www/html/*
 !/www/html/.keep
 # !/www/html/.htaccess
-/db-data/
+/docker/mysql/mysql_data
+/mt-settings
 
 # gitignore
 
